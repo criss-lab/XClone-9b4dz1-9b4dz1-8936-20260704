@@ -1,0 +1,11 @@
+[install]
+# Allow esbuild's postinstall to chmod +x the native binary
+trustedDependencies = [
+  "esbuild",
+  "@esbuild/linux-x64",
+  "@esbuild/linux-arm64",
+  "@esbuild/linux-musl-x64",
+  "@esbuild/linux-musl-arm64",
+  "@esbuild/darwin-x64",
+  "@esbuild/darwin-arm64"
+]
