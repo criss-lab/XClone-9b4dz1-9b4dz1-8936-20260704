@@ -1,11 +1,3 @@
-// EARLY CLEANUP — also remove the non-executable esbuild CLI wrapper here
-// so multiple config-loading passes all converge on deleting the binary.
-import { rmSync } from 'fs';
-[
-  './node_modules/.bin/esbuild',
-  './node_modules/esbuild/bin/esbuild',
-].forEach(p => { try { rmSync(p, { force: true }); } catch { /* ignore */ } });
-
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ['class'],
