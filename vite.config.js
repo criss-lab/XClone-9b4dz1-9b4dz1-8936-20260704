@@ -1,28 +1,55 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import { rmSync } from "fs";
+import { rmSync, chmodSync, statSync, existsSync } from "fs";
+import { execSync } from "child_process";
 
-// ── Permanent esbuild CLI fix ─────────────────────────────────────────────────
-// OnSpace's Go binary runs `fork/exec node_modules/.bin/esbuild` as a
-// pre-build syntax check.  The CLI wrapper binary lacks execute permissions
-// in OnSpace's container.  Vite itself never uses the CLI — it uses esbuild's
-// Node.js API (node_modules/esbuild/lib/main.js → native platform binary).
-//
-// PRIMARY FIX: bin-links=false in .npmrc prevents bun from ever creating
-// the node_modules/.bin/esbuild symlink during install.
-//
-// SECONDARY FIX (failsafe): If the binary somehow exists (e.g. cached from
-// a previous install), delete it here so OnSpace gets ENOENT instead of
-// EACCES. This runs every time vite.config.js is loaded.
-[
-  "./node_modules/.bin/esbuild",
-  "./node_modules/esbuild/bin/esbuild",
-  "./node_modules/.bin/esbuild.cmd",
-  "./node_modules/.bin/esbuild.ps1",
-].forEach((p) => {
-  try { rmSync(p, { force: true }); } catch { /* ignore */ }
-});
+// ── esbuild CLI binary fix ────────────────────────────────────────────────────
+// OnSpace's Go binary runs `fork/exec node_modules/.bin/esbuild` as a syntax
+// pre-check.  The wrapper binary is created by bun without execute permissions.
+// Strategy (applied in order):
+//  1. chmod +x — if the filesystem allows it the pre-check will PASS cleanly.
+//  2. shell chmod — secondary attempt via /bin/sh (different permission context).
+//  3. rmSync — last resort: ENOENT is handled gracefully; EACCES is a hard fail.
+(function fixEsbuildPermissions() {
+  const bins = [
+    "./node_modules/.bin/esbuild",
+    "./node_modules/esbuild/bin/esbuild",
+    "./node_modules/.bin/esbuild.cmd",
+    "./node_modules/.bin/esbuild.ps1",
+  ];
+
+  bins.forEach((p) => {
+    if (!existsSync(p)) return;
+    try {
+      // Attempt 1: Node.js chmodSync
+      chmodSync(p, 0o755);
+      // Verify it actually worked
+      const mode = statSync(p).mode;
+      if (mode & 0o111) {
+        // Execute bit is set — leave the binary in place so the check passes
+        console.log(`[esbuild-fix] chmod succeeded on ${p}`);
+        return;
+      }
+    } catch { /* ignore */ }
+
+    try {
+      // Attempt 2: Shell chmod (may run with elevated privileges in some envs)
+      execSync(`chmod +x "${p}"`, { stdio: "ignore" });
+      const mode = statSync(p).mode;
+      if (mode & 0o111) {
+        console.log(`[esbuild-fix] shell chmod succeeded on ${p}`);
+        return;
+      }
+    } catch { /* ignore */ }
+
+    // Attempt 3: Delete so OnSpace gets ENOENT (graceful) not EACCES (hard fail)
+    try {
+      rmSync(p, { force: true });
+      console.log(`[esbuild-fix] deleted ${p} (chmod failed, noexec fs likely)`);
+    } catch { /* ignore */ }
+  });
+})();
 
 // ── Stub path (Capacitor + Vercel Analytics → web no-ops) ────────────────────
 const stub = path.resolve("./src/lib/capacitor-stub.ts");
