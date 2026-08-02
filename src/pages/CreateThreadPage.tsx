@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Image as ImageIcon, X } from 'lucide-react';
+import { Loader2, Image as ImageIcon, X, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
 
@@ -20,10 +20,46 @@ export default function CreateThreadPage() {
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // ── AI Writer ────────────────────────────────────────────────────────────
+  const [showAiWriter, setShowAiWriter] = useState(false);
+  const [aiTarget, setAiTarget] = useState<'title' | 'content'>('content');
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiDrafts, setAiDrafts] = useState<string[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+
   if (!user) {
     navigate('/auth');
     return null;
   }
+
+  const handleAiWrite = async () => {
+    if (!aiPrompt.trim()) return;
+    setAiLoading(true);
+    setAiDrafts([]);
+    const { data } = await supabase.functions.invoke('ai-chat', {
+      body: {
+        messages: [{
+          role: 'user',
+          content: aiTarget === 'title'
+            ? `Generate exactly 3 compelling, unique thread titles about: "${aiPrompt.trim()}". Return ONLY the 3 titles separated by "|||" — no numbering, no labels.`
+            : `Write exactly 3 different long-form thread content drafts (200-400 words each) about: "${aiPrompt.trim()}". Each should take a different angle or style. Return ONLY the 3 drafts separated by "|||" — no labels, no numbering.`,
+        }],
+        model: 'gemini-2.0-flash',
+      },
+    });
+    const raw = data?.choices?.[0]?.message?.content ?? data?.content ?? data?.text ?? data?.response ?? '';
+    const drafts = raw.split('|||').map((d: string) => d.trim()).filter(Boolean).slice(0, 3);
+    setAiDrafts(drafts.length ? drafts : ['Could not generate drafts. Please try again.']);
+    setAiLoading(false);
+  };
+
+  const applyDraft = (draft: string) => {
+    if (aiTarget === 'title') setTitle(draft.slice(0, 200));
+    else setContent(draft.slice(0, 10000));
+    setAiDrafts([]);
+    setAiPrompt('');
+    setShowAiWriter(false);
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -134,7 +170,18 @@ export default function CreateThreadPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold mb-2">Title</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-semibold">Title</label>
+            <button
+              onClick={() => { setAiTarget('title'); setShowAiWriter(v => !v && aiTarget === 'title' ? false : true); setAiDrafts([]); }}
+              className={`flex items-center gap-1 text-xs font-medium transition-colors ${
+                showAiWriter && aiTarget === 'title' ? 'text-purple-600' : 'text-muted-foreground hover:text-purple-500'
+              }`}
+            >
+              <Wand2 className="w-3.5 h-3.5" />
+              AI Write
+            </button>
+          </div>
           <Input
             placeholder="Give your thread a compelling title..."
             value={title}
@@ -148,7 +195,18 @@ export default function CreateThreadPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold mb-2">Content</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-semibold">Content</label>
+            <button
+              onClick={() => { setAiTarget('content'); setShowAiWriter(v => !v && aiTarget === 'content' ? false : true); setAiDrafts([]); }}
+              className={`flex items-center gap-1 text-xs font-medium transition-colors ${
+                showAiWriter && aiTarget === 'content' ? 'text-purple-600' : 'text-muted-foreground hover:text-purple-500'
+              }`}
+            >
+              <Wand2 className="w-3.5 h-3.5" />
+              AI Write
+            </button>
+          </div>
           <Textarea
             placeholder="Share your story, thoughts, or insights... You can use hashtags to connect with related posts!"
             value={content}
@@ -160,6 +218,56 @@ export default function CreateThreadPage() {
             {content.length}/10,000 characters
           </div>
         </div>
+
+        {/* AI Writer Panel */}
+        {showAiWriter && (
+          <div className="border border-purple-500/20 rounded-xl bg-purple-500/5 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Wand2 className="w-4 h-4 text-purple-500" />
+                <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">
+                  AI {aiTarget === 'title' ? 'Title' : 'Content'} Writer
+                </span>
+              </div>
+              <button onClick={() => { setShowAiWriter(false); setAiDrafts([]); setAiPrompt(''); }} className="text-muted-foreground hover:text-foreground">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={aiPrompt}
+                onChange={e => setAiPrompt(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleAiWrite()}
+                placeholder={aiTarget === 'title' ? 'What is your thread about?' : 'Describe the topic in detail...'}
+                className="flex-1 text-sm bg-background border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                disabled={aiLoading}
+              />
+              <button
+                onClick={handleAiWrite}
+                disabled={aiLoading || !aiPrompt.trim()}
+                className="flex items-center gap-1.5 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors flex-shrink-0"
+              >
+                {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                {aiLoading ? 'Writing…' : 'Generate'}
+              </button>
+            </div>
+            {aiDrafts.length > 0 && (
+              <div className="mt-3 space-y-2">
+                <p className="text-xs text-muted-foreground font-medium">Click to use a draft:</p>
+                {aiDrafts.map((draft, i) => (
+                  <button
+                    key={i}
+                    onClick={() => applyDraft(draft)}
+                    className="w-full text-left text-sm p-3 border border-border rounded-xl hover:border-purple-500 hover:bg-purple-500/5 transition-colors leading-relaxed max-h-48 overflow-y-auto"
+                  >
+                    {draft}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="flex gap-3">
           <Button

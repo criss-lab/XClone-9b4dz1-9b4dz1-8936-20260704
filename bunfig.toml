@@ -1,5 +1,5 @@
 [install]
-# Allow esbuild's postinstall to chmod +x the native binary
+# Allow esbuild postinstall to chmod +x its native binary
 trustedDependencies = [
   "esbuild",
   "@esbuild/linux-x64",
@@ -7,5 +7,7 @@ trustedDependencies = [
   "@esbuild/linux-musl-x64",
   "@esbuild/linux-musl-arm64",
   "@esbuild/darwin-x64",
-  "@esbuild/darwin-arm64"
+  "@esbuild/darwin-arm64",
+  "@esbuild/win32-x64"
 ]
+lifecycle-scripts = true

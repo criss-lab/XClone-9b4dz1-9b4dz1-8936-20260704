@@ -8,6 +8,12 @@ import { formatNumber } from '@/lib/utils';
 import { UserSuggestionsWidget } from '../features/UserSuggestionsWidget';
 import { ContentSuggestionsWidget } from '../features/ContentSuggestionsWidget';
 
+interface TrendingHashtag {
+  id: string;
+  tag: string;
+  usage_count: number;
+}
+
 interface TrendingTopic {
   id: string;
   topic: string;
@@ -39,14 +45,31 @@ export function RightSidebar() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [trending, setTrending] = useState<TrendingTopic[]>([]);
+  const [trendingHashtags, setTrendingHashtags] = useState<TrendingHashtag[]>([]);
   const [communities, setCommunities] = useState<Community[]>([]);
   const [liveSpaces, setLiveSpaces] = useState<Space[]>([]);
 
   useEffect(() => {
     fetchTrending();
+    fetchTrendingHashtags();
     fetchCommunities();
     fetchLiveSpaces();
   }, []);
+
+  const fetchTrendingHashtags = async () => {
+    const { data } = await supabase
+      .from('trending_hashtags')
+      .select('hashtag_id, trend_score, daily_posts, hashtags(id, tag, usage_count)')
+      .order('trend_score', { ascending: false })
+      .limit(10);
+    if (data) {
+      const tags = data
+        .map((row: any) => row.hashtags)
+        .filter(Boolean)
+        .map((h: any) => ({ id: h.id, tag: h.tag, usage_count: h.usage_count ?? 0 }));
+      setTrendingHashtags(tags);
+    }
+  };
 
   const fetchTrending = async () => {
     // Refresh trending from real posts
@@ -144,6 +167,28 @@ export function RightSidebar() {
           >
             View All Spaces
           </Button>
+        </div>
+      )}
+
+      {/* Trending Hashtags */}
+      {trendingHashtags.length > 0 && (
+        <div className="bg-muted/50 rounded-xl p-4 border border-border">
+          <h3 className="font-bold text-lg mb-3 flex items-center">
+            <Hash className="w-5 h-5 mr-2 text-primary" />
+            Trending Tags
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {trendingHashtags.map(tag => (
+              <button
+                key={tag.id}
+                onClick={() => navigate(`/hashtag/${tag.tag}`)}
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary/8 hover:bg-primary/15 border border-primary/20 hover:border-primary/40 rounded-full text-sm font-medium text-primary transition-all"
+              >
+                #{tag.tag}
+                <span className="text-[10px] text-muted-foreground font-normal ml-0.5">{formatNumber(tag.usage_count)}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
