@@ -1,6 +1,5 @@
 [install]
-# Prevent lifecycle scripts (postinstall etc.) from running - stops esbuild's
-# postinstall from trying to verify/chmod its own binary, which fails on
-# restricted container filesystems and leaves the binary non-executable.
-lifecycle-scripts = false
-trustedDependencies = []
+# Allow postinstall scripts to run so esbuild can chmod +x its own binary.
+# Without this, the esbuild binary lacks execute permissions and OnSpace's
+# pre-check fails with "permission denied".
+lifecycle-scripts = true
