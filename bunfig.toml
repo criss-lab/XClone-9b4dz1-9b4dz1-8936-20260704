@@ -1,0 +1,6 @@
+[install]
+# Prevent lifecycle scripts (postinstall etc.) from running - stops esbuild's
+# postinstall from trying to verify/chmod its own binary, which fails on
+# restricted container filesystems and leaves the binary non-executable.
+lifecycle-scripts = false
+trustedDependencies = []
