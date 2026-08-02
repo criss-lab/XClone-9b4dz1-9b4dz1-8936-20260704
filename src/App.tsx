@@ -10,9 +10,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
-// Capacitor
-import { StatusBar, Style } from '@capacitor/status-bar';
-import { Capacitor } from '@capacitor/core';
+// Capacitor — imported from stub so type-checker never touches the native packages
+import { StatusBar, Style, Capacitor } from '@/lib/capacitor-stub';
 import { showInterstitial, initAdMob } from '@/lib/admob';
 
 // Critical pages — loaded eagerly
