@@ -468,6 +468,28 @@ export function ComposePost({ onSuccess, communityId }: ComposePostProps) {
         if (tagError) console.error('Error tagging products:', tagError);
       }
 
+      // Notify @mentioned users
+      const mentionMatches = content.match(/@(\w+)/g);
+      if (mentionMatches && postData) {
+        const uniqueUsernames = [...new Set(mentionMatches.map(m => m.slice(1).toLowerCase()))];
+        const { data: mentionedUsers } = await supabase
+          .from('user_profiles')
+          .select('id, username')
+          .in('username', uniqueUsernames)
+          .neq('id', user.id); // never notify yourself
+        if (mentionedUsers && mentionedUsers.length > 0) {
+          await supabase.from('notifications').insert(
+            mentionedUsers.map(mu => ({
+              user_id: mu.id,
+              type: 'mention',
+              from_user_id: user.id,
+              post_id: postData.id,
+            }))
+          );
+          console.log(`[mentions] notified ${mentionedUsers.length} user(s)`);
+        }
+      }
+
       // Post to Fediverse if toggled
       if (postToFediverse) {
         try {

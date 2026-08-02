@@ -64,6 +64,7 @@ const RewardedAdHistory = lazy(() => import('@/pages/RewardedAdHistory'));
 const PostAnalyticsDashboard = lazy(() => import('@/pages/PostAnalyticsDashboard'));
 const FediversePage = lazy(() => import('@/pages/FediversePage'));
 const VerificationRequestPage = lazy(() => import('@/pages/VerificationRequestPage'));
+const AdminVerificationPage = lazy(() => import('@/pages/AdminVerificationPage'));
 
 function PageLoader() {
   return (
@@ -160,6 +161,7 @@ function AppInner() {
               <Route path="/post-analytics" element={<PostAnalyticsDashboard />} />
               <Route path="/post-analytics/:postId" element={<PostAnalyticsDashboard />} />
               <Route path="/verify" element={<VerificationRequestPage />} />
+              <Route path="/admin/verifications" element={<AdminVerificationPage />} />
               <Route path="/fediverse" element={<FediversePage />} />
             </Routes>
           </Suspense>
