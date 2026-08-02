@@ -1,5 +1,8 @@
-# Root-level: tells Bun to run postinstall scripts for these packages
-# so esbuild can chmod +x its native binary after install
+[install]
+# Allow postinstall scripts to run so esbuild can chmod +x its native binary
+lifecycle-scripts = true
+
+# Explicitly trust esbuild packages so their postinstall sets +x on the binary
 trustedDependencies = [
   "esbuild",
   "@esbuild/linux-x64",
@@ -10,6 +13,3 @@ trustedDependencies = [
   "@esbuild/darwin-arm64",
   "@esbuild/win32-x64"
 ]
-
-[install]
-lifecycle-scripts = true
