@@ -62,7 +62,9 @@ const AdPerformanceComparison = lazy(() => import('@/pages/AdPerformanceComparis
 const AdminRevenueDashboard = lazy(() => import('@/pages/AdminRevenueDashboard'));
 const BoostAnalyticsPage = lazy(() => import('@/pages/BoostAnalyticsPage'));
 const RewardedAdHistory = lazy(() => import('@/pages/RewardedAdHistory'));
-const PostAnalyticsDashboard = lazy(() => import('@/pages/PostAnalyticsDashboard'));const FediversePage = lazy(() => import('@/pages/FediversePage'));
+const PostAnalyticsDashboard = lazy(() => import('@/pages/PostAnalyticsDashboard'));
+const FediversePage = lazy(() => import('@/pages/FediversePage'));
+const VerificationRequestPage = lazy(() => import('@/pages/VerificationRequestPage'));
 
 function PageLoader() {
   return (
@@ -149,7 +151,8 @@ function AppInner() {
               <Route path="/my-ads" element={<MyAdsPage />} />
               <Route path="/lists/:id" element={<ListDetailPage />} />
               <Route path="/admin/ads" element={<AdConfigPage />} />
-              <Route path="/payouts" element={<PayoutsPage />} /><Route path="/revenue-analytics" element={<RevenueAnalytics />} />
+              <Route path="/payouts" element={<PayoutsPage />} />
+              <Route path="/revenue-analytics" element={<RevenueAnalytics />} />
               <Route path="/fraud-detection" element={<FraudDetection />} />
               <Route path="/ad-performance" element={<AdPerformanceComparison />} />
               <Route path="/admin/revenue" element={<AdminRevenueDashboard />} />
@@ -157,6 +160,7 @@ function AppInner() {
               <Route path="/rewards" element={<RewardedAdHistory />} />
               <Route path="/post-analytics" element={<PostAnalyticsDashboard />} />
               <Route path="/post-analytics/:postId" element={<PostAnalyticsDashboard />} />
+              <Route path="/verify" element={<VerificationRequestPage />} />
               <Route path="/fediverse" element={<FediversePage />} />
             </Routes>
           </Suspense>
