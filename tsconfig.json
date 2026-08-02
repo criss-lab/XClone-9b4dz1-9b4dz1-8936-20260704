@@ -23,7 +23,20 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@capacitor/core":                         ["./src/lib/capacitor-stub.ts"],
+      "@capacitor/status-bar":                   ["./src/lib/capacitor-stub.ts"],
+      "@capacitor/app":                          ["./src/lib/capacitor-stub.ts"],
+      "@capacitor/device":                       ["./src/lib/capacitor-stub.ts"],
+      "@capacitor/filesystem":                   ["./src/lib/capacitor-stub.ts"],
+      "@capacitor/network":                      ["./src/lib/capacitor-stub.ts"],
+      "@capacitor/push-notifications":           ["./src/lib/capacitor-stub.ts"],
+      "@capacitor/share":                        ["./src/lib/capacitor-stub.ts"],
+      "@capacitor-community/admob":              ["./src/lib/capacitor-stub.ts"],
+      "@capacitor-community/firebase-analytics": ["./src/lib/capacitor-stub.ts"],
+      "@capacitor-community/media":              ["./src/lib/capacitor-stub.ts"],
+      "@capgo/capacitor-updater":                ["./src/lib/capacitor-stub.ts"],
+      "@vercel/analytics/react":                 ["./src/lib/capacitor-stub.ts"]
     }
   },
   "include": ["src"],
