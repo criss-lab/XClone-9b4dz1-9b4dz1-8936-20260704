@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Capacitor } from '@capacitor/core';
+import { Capacitor } from '@/lib/capacitor-stub';
 import { AdSenseAd } from './AdSenseAd';
 import { AdMobAd } from './AdMobAd';
-import { BannerAdPosition } from '@capacitor-community/admob';
+import { BannerAdPosition } from '@/lib/capacitor-stub';
 import { supabase } from '@/lib/supabase';
 
 interface HybridAdProps {

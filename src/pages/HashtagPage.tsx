@@ -10,7 +10,7 @@ import { Loader2, TrendingUp, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatNumber } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
-import { AdMob, BannerAdSize, BannerAdPosition } from '@capacitor-community/admob';
+import { AdMob, BannerAdSize, BannerAdPosition } from '@/lib/capacitor-stub';
 
 export default function HashtagPage() {
   const { tag } = useParams();

@@ -15,8 +15,7 @@ import {
   Image as ImageIcon, X, Camera
 } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
-import { AdMob, BannerAdSize, BannerAdPosition } from '@capacitor-community/admob';
-import { Capacitor } from '@capacitor/core';
+import { AdMob, BannerAdSize, BannerAdPosition, Capacitor } from '@/lib/capacitor-stub';
 import { ADMOB_CONFIG } from '@/lib/admob';
 import { toast as sonnerToast } from 'sonner';
 

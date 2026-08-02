@@ -2,8 +2,7 @@ import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { mapSupabaseUser } from '@/lib/auth';
-import { Capacitor } from '@capacitor/core';
-import { PushNotifications } from '@capacitor/push-notifications';
+import { Capacitor, PushNotifications } from '@/lib/capacitor-stub';
 
 /** Trigger RSA key generation via the activitypub-keygen edge function */
 async function triggerKeygenForUser(userId: string) {

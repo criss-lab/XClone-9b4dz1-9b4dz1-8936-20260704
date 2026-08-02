@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { authService } from '@/lib/auth';
 import { useAuthStore } from '@/stores/authStore';
 import { Loader2 } from 'lucide-react';
-import { AdMob, BannerAdSize, BannerAdPosition } from '@capacitor-community/admob';
+import { AdMob, BannerAdSize, BannerAdPosition } from '@/lib/capacitor-stub';
 
 export default function AuthPage() {
   const [mode, setMode] = useState<'signin' | 'signup' | 'verify'>('signin');

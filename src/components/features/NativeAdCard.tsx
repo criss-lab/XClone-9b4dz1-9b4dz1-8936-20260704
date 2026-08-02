@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Capacitor } from '@capacitor/core';
+import { Capacitor } from '@/lib/capacitor-stub';
 import { ADMOB_CONFIG, AD_REVENUE_SPLIT, isAdMobSupported, initAdMob } from '@/lib/admob';
 import { Sparkles, ExternalLink, X } from 'lucide-react';
 import { AdSenseAd } from '@/components/features/AdSenseAd';
