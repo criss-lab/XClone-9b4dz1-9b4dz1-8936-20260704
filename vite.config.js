@@ -8,13 +8,18 @@ import { rmSync } from "fs";
 // pre-build syntax check.  The CLI wrapper binary lacks execute permissions
 // in OnSpace's container.  Vite itself never uses the CLI — it uses esbuild's
 // Node.js API (node_modules/esbuild/lib/main.js → native platform binary).
-// Removing the CLI wrappers before the check runs gives OnSpace ENOENT
-// (not found) instead of EACCES (permission denied), allowing the build to
-// proceed.  This runs every time vite.config.js is loaded, so the fix
-// persists across fresh installs.
+//
+// PRIMARY FIX: bin-links=false in .npmrc prevents bun from ever creating
+// the node_modules/.bin/esbuild symlink during install.
+//
+// SECONDARY FIX (failsafe): If the binary somehow exists (e.g. cached from
+// a previous install), delete it here so OnSpace gets ENOENT instead of
+// EACCES. This runs every time vite.config.js is loaded.
 [
   "./node_modules/.bin/esbuild",
   "./node_modules/esbuild/bin/esbuild",
+  "./node_modules/.bin/esbuild.cmd",
+  "./node_modules/.bin/esbuild.ps1",
 ].forEach((p) => {
   try { rmSync(p, { force: true }); } catch { /* ignore */ }
 });

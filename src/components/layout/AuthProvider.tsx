@@ -11,13 +11,12 @@ async function triggerKeygenForUser(userId: string) {
     const token = sessionData?.session?.access_token;
     if (!token) return;
 
-    // Check if keys already exist
     const { data: existing } = await supabase
       .from('activitypub_keys')
       .select('id')
       .eq('user_id', userId)
       .maybeSingle();
-    if (existing) return; // already has keys
+    if (existing) return;
 
     const backendUrl = import.meta.env.VITE_SUPABASE_URL;
     if (!backendUrl) return;
@@ -36,8 +35,13 @@ async function triggerKeygenForUser(userId: string) {
 }
 
 /**
- * Added only to fix build error.
- * Original logic preserved.
+ * Send an in-app notification and optionally a push notification.
+ *
+ * Only inserts columns that actually exist in the notifications table:
+ *   user_id, type, from_user_id, post_id, read, created_at
+ *
+ * Push delivery is attempted via the send-push-notification edge function
+ * (non-fatal — the in-app notification is always attempted first).
  */
 export async function sendActivityNotification({
   recipientUserId,
@@ -51,20 +55,45 @@ export async function sendActivityNotification({
   data?: any;
 }) {
   try {
-    // Insert notification into database
-    await supabase.from('notifications').insert({
+    // ── In-app notification (only valid schema columns) ─────────────────────
+    const notificationType = data?.type && ['like','repost','follow','reply','mention','verified'].includes(data.type)
+      ? data.type
+      : 'follow'; // safe default
+
+    const { error: dbError } = await supabase.from('notifications').insert({
       user_id: recipientUserId,
-      type: data?.type || 'activity',
-      title,
-      body,
-      post_id: data?.postId || null,
-      from_user_id: data?.fromUserId || null,
-      data,
+      type: notificationType,
+      from_user_id: data?.fromUserId ?? null,
+      post_id: data?.postId ?? null,
     });
 
-    console.log('[Push] Activity notification saved');
+    if (dbError) {
+      console.warn('[Notification] DB insert failed:', dbError.message);
+    }
+
+    // ── Push notification (non-blocking, via edge function) ─────────────────
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token;
+    if (token) {
+      const backendUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (backendUrl) {
+        fetch(`${backendUrl}/functions/v1/send-push-notification`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            user_id: recipientUserId,
+            title,
+            body,
+            data,
+          }),
+        }).catch(() => {}); // fire-and-forget, non-fatal
+      }
+    }
   } catch (error) {
-    console.error('[Push] Failed to send activity notification:', error);
+    console.warn('[Notification] Failed to send activity notification:', error);
   }
 }
 
@@ -72,21 +101,16 @@ async function registerPushNotifications(userId: string) {
   if (!Capacitor.isNativePlatform()) return;
 
   try {
-    // Request permission
     const permResult = await PushNotifications.requestPermissions();
     if (permResult.receive !== 'granted') {
       console.log('[Push] Permission denied');
       return;
     }
 
-    // Register with FCM
     await PushNotifications.register();
 
-    // Listen for FCM token
     PushNotifications.addListener('registration', async (token) => {
       console.log('[Push] FCM token:', token.value);
-
-      // Upsert token to Supabase
       await supabase.from('fcm_tokens').upsert(
         {
           user_id: userId,
@@ -102,18 +126,15 @@ async function registerPushNotifications(userId: string) {
       console.error('[Push] Registration error:', error);
     });
 
-    // Handle foreground notifications
     PushNotifications.addListener('pushNotificationReceived', (notification) => {
       console.log('[Push] Received:', notification);
     });
 
-    // Handle notification tap
     PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
       console.log('[Push] Action performed:', action);
-
-      const data = action.notification.data;
-      if (data?.route) {
-        window.location.href = data.route;
+      const routeData = action.notification.data;
+      if (routeData?.route) {
+        window.location.href = routeData.route;
       }
     });
   } catch (err) {
@@ -131,12 +152,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (mounted && session?.user) {
         const mappedUser = mapSupabaseUser(session.user);
         login(mappedUser);
-
         registerPushNotifications(session.user.id);
-        // Ensure RSA keys exist (non-blocking)
         triggerKeygenForUser(session.user.id);
       }
-
       if (mounted) setLoading(false);
     });
 
@@ -149,9 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const mappedUser = mapSupabaseUser(session.user);
         login(mappedUser);
         setLoading(false);
-
         registerPushNotifications(session.user.id);
-        // Auto-generate RSA keys if not present
         triggerKeygenForUser(session.user.id);
       } else if (event === 'SIGNED_OUT') {
         logout();
