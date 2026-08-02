@@ -2,10 +2,22 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
-// Resolve the capacitor stub once — used for all native-only packages
+// Stub path — redirects all native/platform packages to a web-safe no-op
 const stub = path.resolve("./src/lib/capacitor-stub.ts");
 
 export default defineConfig({
+  // Tell Vite (and OnSpace's wrapper) NOT to use the esbuild binary for
+  // source transforms. @vitejs/plugin-react handles .tsx via Babel.
+  // This prevents OnSpace from invoking node_modules/.bin/esbuild entirely.
+  esbuild: false,
+
+  // Skip automatic dep discovery/pre-bundling — also uses esbuild under the
+  // hood, so disabling it removes the second esbuild invocation path.
+  optimizeDeps: {
+    noDiscovery: true,
+    include: [],
+  },
+
   server: {
     host: "::",
     port: 8080,
@@ -15,10 +27,9 @@ export default defineConfig({
 
   resolve: {
     alias: {
-      // Path alias used throughout the app
       "@": path.resolve("./src"),
 
-      // Stub out native-only packages so the web build never touches them
+      // Platform-only packages → web-safe stub (no native code in browser)
       "@capacitor/core":                         stub,
       "@capacitor/status-bar":                   stub,
       "@capacitor/app":                          stub,
@@ -36,6 +47,9 @@ export default defineConfig({
   },
 
   build: {
+    // Use Rollup's own minification (not esbuild) so the binary is never
+    // needed during production builds either.
+    minify: "terser",
     rollupOptions: {
       onwarn(warning, warn) {
         if (warning.code === "MODULE_LEVEL_DIRECTIVE") return;
