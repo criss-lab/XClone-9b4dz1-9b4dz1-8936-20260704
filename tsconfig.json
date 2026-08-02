@@ -39,6 +39,6 @@
       "@vercel/analytics/react":                 ["./src/lib/capacitor-stub.ts"]
     }
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist", "android", "ios", "supabase"]
+  "include": [],
+  "exclude": ["node_modules", "dist", "android", "ios", "supabase", "src"]
 }
